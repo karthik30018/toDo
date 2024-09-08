@@ -1,14 +1,22 @@
 const express = require('express')
 const Router = express.Router()
 const List = require('../models/list')
+const User = require('../models/user')
 
 Router.post("/addTask",async (req,res)=>{
     try{
-        const {title,body} = req.body;
+        const {title,body,email} = req.body;
+        const existingUser = await User.findOne({email})
+        if(existingUser){
+            const list = new List({ title , body, user:existingUser})
+            await list.save().then(()=>res.status(200).json({list}))
+            existingUser.list.push(list)
+            existingUser.save()
+        }else{
+            res.status(400).json({message: "User does not exist"})
+        }
         
-        const list = new List({ title , body})
-        await list.save().then(()=>res.status(200).json({list}))
-    }catch(err){
+    }catch(err){ 
         console.log(err)
     }
     
@@ -16,9 +24,12 @@ Router.post("/addTask",async (req,res)=>{
 
 Router.put("/updateTask/:id",async (req,res)=>{
     try{
-        const {title,body} = req.body;
-        const list = await List.findByIdAndUpdate(req.params.id,{title,body})
-        list.save().then(()=>res.status(200).json({message:"Updated"}))
+        const {title,body,email} = req.body;
+        const existingUser = await User.findOne({email})
+        if(existingUser){
+            const list =  await List.findByIdAndUpdate(req.params.id,{title,body})
+            list.save().then(()=>res.status(200).json({message:"Updated"}))
+        }
     }catch(err){
         console.log(err)
     }
@@ -27,7 +38,12 @@ Router.put("/updateTask/:id",async (req,res)=>{
 
 Router.delete("/deleteTask/:id",async (req,res)=>{
     try{
-        await List.findByIdAndDelete(req.params.id).then(()=>res.status(200).json({message:"Deleted"}))
+        const {email} = req.body;
+        const existingUser = await User.findOneAndUpdate({email},{$pull:{list:req.params.id}})
+        if(existingUser){
+            await List.findByIdAndDelete(req.params.id).then(()=>res.status(200).json({message:"Deleted"}))
+        }
+       
     }catch(err){
         console.log(err)
     }
@@ -35,10 +51,20 @@ Router.delete("/deleteTask/:id",async (req,res)=>{
 })
 
 
-Router.get("/displayAll",async(req,res)=>{
-   List.find().then((data)=>{
-    res.status(200).json(data)
-   })
+Router.get("/getTask/:id",async(req,res)=>{
+    try{
+        const list = await List.find({user:req.params.id}).sort({createdAt: -1})
+        
+        if(list.length !== 0){
+            res.status(200).json({list})
+        }else{
+            res.status(200).json({message:"No task created!"})
+        }
+    }catch(err){
+        console.log(err)
+    }
+  
+   
 })
 
 module.exports = Router;

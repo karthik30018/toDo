@@ -9,8 +9,13 @@ const ListSchema = new mongoose.Schema(
         body:{
             type:String,
             required:true
-        }
-    }
+        },
+        user:[{
+            type:mongoose.Types.ObjectId,
+            ref:"User"
+        }]
+    },
+    {timestamps:true}
 )
 
 module.exports = mongoose.model("ListSchema",ListSchema);
