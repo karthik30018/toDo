@@ -9,11 +9,11 @@ Router.post("/register",async (req,res)=>{
      const hashPassword = bcrypt.hashSync(password);
      const user = new User({email,username,password: hashPassword})
      await user.save().then(()=>
-        res.status(200).json({user:user})
+        res.status(200).json({message:"Sign Up Successfull!!"})
      )
     }catch(err){
         // console.log(err)
-        res.status(400).json({message:"User Already Exists"})
+        res.status(200).json({message:"User Already Exists"})
     }
 }) 
 
@@ -22,11 +22,11 @@ Router.post("/signin",async(req,res)=>{
     try{
        const user = await User.findOne({email:req.body.email}) 
        if(!user){
-        res.status(400).json({message:"User Not Exists"})
+        res.status(200).json({message:"User Not Exists"})
        }
        const isPasswordCorrect = bcrypt.compareSync(req.body.password, user.password)
        if(!isPasswordCorrect){
-        res.status(400).json({message:"Password is Incorrect"})
+        res.status(200).json({message:"Password is Incorrect"})
        }
        const {password,...other} = user._doc;
        res.status(200).json({...other})
